@@ -1,0 +1,56 @@
+"""
+Application configuration settings
+"""
+from typing import List
+from pydantic import BaseSettings, validator
+
+
+class Settings(BaseSettings):
+    """Application settings"""
+    
+    # API Configuration
+    API_V1_STR: str = "/api/v1"
+    PROJECT_NAME: str = "Social Media Post Manager"
+    
+    # CORS
+    ALLOWED_HOSTS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    
+    # Database
+    DATABASE_URL: str = "postgresql://user:password@localhost/social_media_manager"
+    
+    # External APIs
+    SERPER_API_KEY: str = ""
+    ANTHROPIC_API_KEY: str = ""
+    OPENAI_API_KEY: str = ""
+    GOOGLE_API_KEY: str = ""
+    
+    # Quota Limits
+    DAILY_QUOTA_LIMIT: int = 10
+    MONTHLY_QUOTA_LIMIT: int = 300
+    
+    # LLM Configuration
+    DEFAULT_LLM_MODEL: str = "claude-3-5-sonnet"
+    LLM_MAX_TOKENS: int = 4000
+    LLM_TEMPERATURE: float = 0.7
+    
+    # News Configuration
+    MAX_NEWS_ARTICLES: int = 12
+    DEFAULT_NEWS_ARTICLES: int = 5
+    NEWS_CACHE_TTL: int = 3600  # 1 hour
+    
+    # Logging
+    LOG_LEVEL: str = "INFO"
+    LOG_FORMAT: str = "json"
+    
+    @validator("ALLOWED_HOSTS", pre=True)
+    def assemble_cors_origins(cls, v):
+        if isinstance(v, str):
+            return [i.strip() for i in v.split(",")]
+        return v
+    
+    class Config:
+        env_file = ".env"
+        case_sensitive = True
+
+
+settings = Settings()

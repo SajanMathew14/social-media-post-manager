@@ -2,6 +2,7 @@
 node_modules/
 frontend/
 shared/
+package.json
 pnpm-lock.yaml
 pnpm-workspace.yaml
 

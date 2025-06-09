@@ -8,7 +8,6 @@
     "backend",
     "shared"
   ],
-  "packageManager": "pnpm@8.15.0",
   "scripts": {
     "dev": "concurrently \"pnpm --filter frontend dev\" \"pnpm --filter backend dev\"",
     "build": "pnpm --filter shared build && pnpm --filter frontend build && pnpm --filter backend build",

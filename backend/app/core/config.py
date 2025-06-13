@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Social Media Post Manager"
     
     # CORS
-    ALLOWED_HOSTS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    ALLOWED_HOSTS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000", "https://*.onrender.com", "*"]
     
     # Database
     # DATABASE_URL: str = "postgresql://user:password@localhost/social_media_manager"

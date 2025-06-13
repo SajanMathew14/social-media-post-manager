@@ -17,8 +17,9 @@ class Settings(BaseSettings):
     ALLOWED_HOSTS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
     
     # Database
-    DATABASE_URL: str = "postgresql://user:password@localhost/social_media_manager"
-    
+    # DATABASE_URL: str = "postgresql://user:password@localhost/social_media_manager"
+    DATABASE_URL: str = "postgresql://social_media_post_manager_db_user:hdagqO9zoJBaHkKKdLZUhTjCybRIqXsc@dpg-d15uhtqdbo4c73c8cpkg-a/social_media_post_manager_db"
+
     # External APIs
     SERPER_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""

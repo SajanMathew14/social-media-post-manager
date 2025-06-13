@@ -11,9 +11,15 @@ passlib[bcrypt]==1.7.4
 httpx==0.25.2
 aiofiles==23.2.1
 python-dotenv==1.0.0
-langchain==0.1.0
-langchain-anthropic==0.1.0
-langchain-openai==0.0.5
-langchain-google-genai==0.0.6
-langgraph==0.0.26
+
+# Updated LangChain packages with compatible versions (no LangSmith conflicts)
+langchain==0.1.20
+langchain-anthropic==0.1.20
+langchain-openai==0.1.20
+langchain-google-genai==1.0.10
+langgraph==0.0.69
+
+# Langfuse for LLM observability (replaces LangSmith)
+langfuse==2.36.0
+
 requests==2.31.0

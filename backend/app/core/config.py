@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     GOOGLE_API_KEY: str = ""
     
+    # Langfuse Configuration (LLM Observability)
+    LANGFUSE_PUBLIC_KEY: str = ""
+    LANGFUSE_SECRET_KEY: str = ""
+    LANGFUSE_HOST: str = "https://cloud.langfuse.com"
+    
     # Quota Limits
     DAILY_QUOTA_LIMIT: int = 10
     MONTHLY_QUOTA_LIMIT: int = 300

@@ -13,8 +13,11 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "Social Media Post Manager"
     
-    # CORS
-    ALLOWED_HOSTS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000", "https://*.onrender.com", "*"]
+    # CORS Origins (full URLs with protocols)
+    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000", "https://*.onrender.com"]
+    
+    # Trusted Hosts (domain names only, no protocols)
+    TRUSTED_HOSTS: List[str] = ["localhost", "127.0.0.1", "*.onrender.com"]
     
     # Database
     # DATABASE_URL: str = "postgresql://user:password@localhost/social_media_manager"
@@ -49,8 +52,14 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     LOG_FORMAT: str = "json"
     
-    @validator("ALLOWED_HOSTS", pre=True)
+    @validator("CORS_ORIGINS", pre=True)
     def assemble_cors_origins(cls, v):
+        if isinstance(v, str):
+            return [i.strip() for i in v.split(",")]
+        return v
+    
+    @validator("TRUSTED_HOSTS", pre=True)
+    def assemble_trusted_hosts(cls, v):
         if isinstance(v, str):
             return [i.strip() for i in v.split(",")]
         return v

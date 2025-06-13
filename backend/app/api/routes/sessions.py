@@ -12,7 +12,7 @@ from datetime import datetime
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
+from app.core.dependencies import get_db
 from app.models.session import Session
 from app.models.user_request import UserRequest
 from app.core.config import settings

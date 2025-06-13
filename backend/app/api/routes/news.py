@@ -20,7 +20,7 @@ from app.langgraph.utils.error_handlers import (
     DatabaseError,
     NewsProcessingError
 )
-from app.core.database import get_db
+from app.core.dependencies import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()

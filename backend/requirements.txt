@@ -12,12 +12,13 @@ httpx==0.25.2
 aiofiles==23.2.1
 python-dotenv==1.0.0
 
-# Updated LangChain packages with compatible versions (no LangSmith conflicts)
-langchain==0.1.20
-langchain-anthropic==0.1.20
-langchain-openai==0.1.20
+# Updated LangChain packages with latest compatible versions
+langchain==0.2.16
+langchain-anthropic==0.1.23
+langchain-openai==0.1.25
 langchain-google-genai==1.0.10
-langgraph==0.0.69
+langchain-core==0.2.39
+langgraph==0.2.28
 
 # Langfuse for LLM observability (replaces LangSmith)
 langfuse==2.36.0

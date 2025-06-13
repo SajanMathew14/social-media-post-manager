@@ -5,7 +5,7 @@ from fastapi import HTTPException, status
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import SessionLocal
+from app.core.database import AsyncSessionLocal
 from app.core.db_status import get_database_status
 
 
@@ -23,7 +23,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             }
         )
     
-    async with SessionLocal() as session:
+    async with AsyncSessionLocal() as session:
         try:
             yield session
         except Exception as e:

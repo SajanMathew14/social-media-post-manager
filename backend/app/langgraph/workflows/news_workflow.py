@@ -9,7 +9,7 @@ This workflow follows LangGraph best practices:
 """
 import uuid
 from typing import Dict, Any
-from langgraph import StateGraph, START, END
+from langgraph.graph import StateGraph, START, END
 
 from app.langgraph.state.news_state import NewsState, create_initial_state
 from app.langgraph.nodes.validate_input_node import ValidateInputNode

@@ -12,11 +12,6 @@
       "dest": "frontend/$1"
     }
   ],
-  "functions": {
-    "frontend/src/app/**": {
-      "maxDuration": 30
-    }
-  },
   "env": {
     "NEXT_PUBLIC_API_URL": "@next_public_api_url"
   },

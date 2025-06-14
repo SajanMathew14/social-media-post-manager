@@ -1,0 +1,37 @@
+{
+  "name": "social-media-post-manager",
+  "version": "1.0.0",
+  "description": "SaaS LinkedIn Content Manager - MVP Phase 1",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter frontend dev\" \"pnpm --filter backend dev\"",
+    "build": "pnpm --filter shared build && pnpm --filter frontend build && pnpm --filter backend build",
+    "build:frontend": "pnpm --filter shared build && pnpm --filter frontend build",
+    "build:backend": "pnpm --filter backend build",
+    "lint": "pnpm --filter frontend lint && pnpm --filter backend lint",
+    "test": "pnpm --filter frontend test && pnpm --filter backend test",
+    "test:frontend": "pnpm --filter frontend test",
+    "test:backend": "pnpm --filter backend test",
+    "clean": "pnpm --filter frontend clean && pnpm --filter backend clean",
+    "install:all": "pnpm install",
+    "deploy:check": "pnpm build && pnpm test",
+    "seed:db": "cd backend && python scripts/seed_topics.py"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.5",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}

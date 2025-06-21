@@ -190,6 +190,27 @@ Generate the LinkedIn post now:"""
                 }
             )
             
+            # Check if there are no articles
+            if not state["articles"] or len(state["articles"]) == 0:
+                # Create a generic post about the topic
+                generic_content = f"📢 Stay tuned for the latest updates on {state['topic']}! 🚀\n\nNo specific news items available at the moment, but exciting developments are always happening in this space.\n\n#{''.join(state['topic'].split())} #TechNews #Innovation"
+                
+                linkedin_post = GeneratedPostContent(
+                    content=generic_content,
+                    char_count=len(generic_content),
+                    hashtags=self._extract_hashtags(generic_content),
+                    shortened_urls=None
+                )
+                
+                new_state = state.copy()
+                new_state["linkedin_post"] = linkedin_post
+                
+                return mark_post_step_completed(
+                    new_state,
+                    "linkedin_post_generation",
+                    "Generated generic LinkedIn post (no articles available)"
+                )
+            
             # Check if any LLM providers are available
             if not self.llm_providers:
                 raise LLMProviderError(

@@ -51,6 +51,21 @@ def keep_first_articles(left: List["NewsArticleInput"], right: List["NewsArticle
     return left
 
 
+def keep_first_value(left: str, right: str) -> str:
+    """
+    Custom reducer that keeps the first (original) value.
+    Used for immutable fields like topic, session_id, etc.
+    
+    Args:
+        left: Existing value
+        right: New value (ignored)
+        
+    Returns:
+        Original value
+    """
+    return left
+
+
 class NewsArticleInput(TypedDict):
     """Simplified news article for post generation"""
     title: str
@@ -79,7 +94,7 @@ class PostState(TypedDict):
     
     # Input parameters (immutable throughout workflow)
     articles: Annotated[List[NewsArticleInput], keep_first_articles]
-    topic: str
+    topic: Annotated[str, keep_first_value]
     llm_model: str
     session_id: str
     workflow_id: str

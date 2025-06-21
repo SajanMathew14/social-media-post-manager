@@ -22,8 +22,8 @@ class PostWorkflow:
     
     Workflow Steps:
     1. START -> Generate posts in parallel:
-       - linkedin_post: Generate LinkedIn post
-       - x_post: Generate X (Twitter) post
+       - generate_linkedin_post: Generate LinkedIn post
+       - generate_x_post: Generate X (Twitter) post
     2. Both posts -> save_posts: Save to database
     3. save_posts -> END: Complete workflow
     
@@ -47,19 +47,19 @@ class PostWorkflow:
         workflow = StateGraph(PostState)
         
         # Add all nodes
-        workflow.add_node("linkedin_post", LinkedInPostNode())
-        workflow.add_node("x_post", XPostNode())
+        workflow.add_node("generate_linkedin_post", LinkedInPostNode())
+        workflow.add_node("generate_x_post", XPostNode())
         workflow.add_node("save_posts", SavePostsNode())
         
         # Define workflow edges - simple sequential approach
         # Both posts start in parallel from START
-        workflow.add_edge(START, "linkedin_post")
-        workflow.add_edge(START, "x_post")
+        workflow.add_edge(START, "generate_linkedin_post")
+        workflow.add_edge(START, "generate_x_post")
         
         # Both posts go directly to save_posts
         # The save_posts node will handle the logic to wait for both
-        workflow.add_edge("linkedin_post", "save_posts")
-        workflow.add_edge("x_post", "save_posts")
+        workflow.add_edge("generate_linkedin_post", "save_posts")
+        workflow.add_edge("generate_x_post", "save_posts")
         
         # Save posts to END
         workflow.add_edge("save_posts", END)

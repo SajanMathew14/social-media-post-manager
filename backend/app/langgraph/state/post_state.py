@@ -37,7 +37,7 @@ def add_processing_steps(left: List[PostProcessingStep], right: List[PostProcess
     return left + right
 
 
-def keep_first_articles(left: List[NewsArticleInput], right: List[NewsArticleInput]) -> List[NewsArticleInput]:
+def keep_first_articles(left: List["NewsArticleInput"], right: List["NewsArticleInput"]) -> List["NewsArticleInput"]:
     """
     Custom reducer for articles that keeps the first (original) value.
     

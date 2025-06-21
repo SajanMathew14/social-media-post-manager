@@ -177,23 +177,33 @@ Generate the LinkedIn post now:"""
             Updated state with generated LinkedIn post
         """
         try:
+            # Get session_id and workflow_id with defensive checks
+            session_id = state.get("session_id", "")
+            workflow_id = state.get("workflow_id", "")
+            
             # Log start of LinkedIn post generation
             self.logger.log_processing_step(
-                session_id=state["session_id"],
-                workflow_id=state["workflow_id"],
+                session_id=session_id or "unknown",
+                workflow_id=workflow_id or "unknown",
                 step="linkedin_post_generation_start",
-                message=f"Generating LinkedIn post for {len(state['articles'])} articles",
+                message=f"Generating LinkedIn post for {len(state.get('articles', []))} articles",
                 extra_data={
-                    "topic": state["topic"],
-                    "article_count": len(state["articles"]),
-                    "llm_model": state["llm_model"]
+                    "topic": state.get("topic", ""),
+                    "article_count": len(state.get("articles", [])),
+                    "llm_model": state.get("llm_model", ""),
+                    "session_id": session_id,
+                    "workflow_id": workflow_id,
+                    "state_keys": list(state.keys())
                 }
             )
             
             # Check if there are no articles
-            if not state["articles"] or len(state["articles"]) == 0:
+            articles = state.get("articles", [])
+            topic = state.get("topic", "Unknown Topic")
+            
+            if not articles or len(articles) == 0:
                 # Create a generic post about the topic
-                generic_content = f"📢 Stay tuned for the latest updates on {state['topic']}! 🚀\n\nNo specific news items available at the moment, but exciting developments are always happening in this space.\n\n#{''.join(state['topic'].split())} #TechNews #Innovation"
+                generic_content = f"📢 Stay tuned for the latest updates on {topic}! 🚀\n\nNo specific news items available at the moment, but exciting developments are always happening in this space.\n\n#{''.join(topic.split())} #TechNews #Innovation"
                 
                 linkedin_post = GeneratedPostContent(
                     content=generic_content,
@@ -215,16 +225,17 @@ Generate the LinkedIn post now:"""
             if not self.llm_providers:
                 raise LLMProviderError(
                     provider="none",
-                    message="No LLM providers are configured. Please set at least one API key (ANTHROPIC_API_KEY, OPENAI_API_KEY, or GOOGLE_API_KEY) in your environment variables."
+                    original_error="No LLM providers are configured. Please set at least one API key (ANTHROPIC_API_KEY, OPENAI_API_KEY, or GOOGLE_API_KEY) in your environment variables."
                 )
             
             # Get LLM provider
-            llm = self.llm_providers.get(state["llm_model"])
+            llm_model = state.get("llm_model", "")
+            llm = self.llm_providers.get(llm_model)
             if not llm:
                 available_models = list(self.llm_providers.keys())
                 raise LLMProviderError(
-                    provider=state["llm_model"],
-                    message=f"LLM provider {state['llm_model']} not available. Available providers: {', '.join(available_models)}"
+                    provider=llm_model,
+                    original_error=f"LLM provider {llm_model} not available. Available providers: {', '.join(available_models)}"
                 )
             
             # Create prompt
@@ -260,8 +271,8 @@ Generate the LinkedIn post now:"""
             
             # Log successful generation
             self.logger.log_processing_step(
-                session_id=state["session_id"],
-                workflow_id=state["workflow_id"],
+                session_id=session_id or "unknown",
+                workflow_id=workflow_id or "unknown",
                 step="linkedin_post_generation_complete",
                 message=f"Successfully generated LinkedIn post ({char_count} chars)",
                 extra_data={
@@ -279,13 +290,13 @@ Generate the LinkedIn post now:"""
         except Exception as e:
             # Log error
             self.logger.log_error(
-                session_id=state["session_id"],
-                workflow_id=state["workflow_id"],
+                session_id=state.get("session_id", "unknown"),
+                workflow_id=state.get("workflow_id", "unknown"),
                 step="linkedin_post_generation_error",
                 error=e,
                 extra_data={
-                    "topic": state["topic"],
-                    "article_count": len(state["articles"])
+                    "topic": state.get("topic", ""),
+                    "article_count": len(state.get("articles", []))
                 }
             )
             

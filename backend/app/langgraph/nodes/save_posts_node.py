@@ -157,19 +157,35 @@ class SavePostsNode:
         """
         db = None
         try:
+            # Get session_id with defensive check
+            session_id = state.get("session_id", "")
+            workflow_id = state.get("workflow_id", "")
+            
+            # Validate session_id is present
+            if not session_id:
+                error_msg = "Session ID is missing from workflow state"
+                self.logger.log_error(
+                    session_id="unknown",
+                    workflow_id=workflow_id or "unknown",
+                    step="save_posts_validation_failed",
+                    error=error_msg,
+                    extra_data={"state_keys": list(state.keys())}
+                )
+                raise ValueError(error_msg)
+            
             # Log start of save operation with detailed context
             self.logger.log_processing_step(
-                session_id=state["session_id"],
-                workflow_id=state["workflow_id"],
+                session_id=session_id,
+                workflow_id=workflow_id,
                 step="save_posts_start",
                 message="Starting database save operation for generated posts",
                 extra_data={
                     "has_linkedin": state.get("linkedin_post") is not None,
                     "has_x": state.get("x_post") is not None,
-                    "session_id": state["session_id"],
-                    "news_workflow_id": state["news_workflow_id"],
-                    "topic": state["topic"],
-                    "article_count": len(state["articles"])
+                    "session_id": session_id,
+                    "news_workflow_id": state.get("news_workflow_id", ""),
+                    "topic": state.get("topic", ""),
+                    "article_count": len(state.get("articles", []))
                 }
             )
             
@@ -177,8 +193,8 @@ class SavePostsNode:
             if not state.get("linkedin_post") and not state.get("x_post"):
                 error_msg = "No posts generated to save - both LinkedIn and X posts are missing"
                 self.logger.log_error(
-                    session_id=state["session_id"],
-                    workflow_id=state["workflow_id"],
+                    session_id=session_id,
+                    workflow_id=workflow_id,
                     step="save_posts_validation_failed",
                     error=error_msg
                 )
@@ -186,8 +202,8 @@ class SavePostsNode:
             
             # Create database session
             self.logger.log_processing_step(
-                session_id=state["session_id"],
-                workflow_id=state["workflow_id"],
+                session_id=session_id,
+                workflow_id=workflow_id,
                 step="creating_db_session",
                 message="Creating database session for post save operation"
             )
@@ -196,17 +212,17 @@ class SavePostsNode:
             
             # Validate session exists
             self.logger.log_processing_step(
-                session_id=state["session_id"],
-                workflow_id=state["workflow_id"],
+                session_id=session_id,
+                workflow_id=workflow_id,
                 step="validating_user_session",
-                message=f"Validating user session: {state['session_id']}"
+                message=f"Validating user session: {session_id}"
             )
             
-            if not await self._validate_session(db, state["session_id"]):
-                error_msg = f"Invalid or non-existent session ID: {state['session_id']}"
+            if not await self._validate_session(db, session_id):
+                error_msg = f"Invalid or non-existent session ID: {session_id}"
                 self.logger.log_error(
-                    session_id=state["session_id"],
-                    workflow_id=state["workflow_id"],
+                    session_id=session_id,
+                    workflow_id=workflow_id,
                     step="session_validation_failed",
                     error=error_msg
                 )

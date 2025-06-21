@@ -179,8 +179,8 @@ class XPostNode:
         Returns:
             Formatted prompt for LLM
         """
-        articles = state["articles"]
-        topic = state["topic"]
+        articles = state.get("articles", [])
+        topic = state.get("topic", "Unknown Topic")
         article_count = len(articles)
         
         # Get most relevant articles (top 3 by relevance score if available)
@@ -231,16 +231,23 @@ Generate the X post now (remember: 250 characters MAX):"""
             Updated state with generated X post
         """
         try:
+            # Get session_id and workflow_id with defensive checks
+            session_id = state.get("session_id", "")
+            workflow_id = state.get("workflow_id", "")
+            
             # Log start of X post generation
             self.logger.log_processing_step(
-                session_id=state["session_id"],
-                workflow_id=state["workflow_id"],
+                session_id=session_id or "unknown",
+                workflow_id=workflow_id or "unknown",
                 step="x_post_generation_start",
-                message=f"Generating X post for {len(state['articles'])} articles",
+                message=f"Generating X post for {len(state.get('articles', []))} articles",
                 extra_data={
-                    "topic": state["topic"],
-                    "article_count": len(state["articles"]),
-                    "llm_model": state["llm_model"]
+                    "topic": state.get("topic", ""),
+                    "article_count": len(state.get("articles", [])),
+                    "llm_model": state.get("llm_model", ""),
+                    "session_id": session_id,
+                    "workflow_id": workflow_id,
+                    "state_keys": list(state.keys())
                 }
             )
             
@@ -248,16 +255,17 @@ Generate the X post now (remember: 250 characters MAX):"""
             if not self.llm_providers:
                 raise LLMProviderError(
                     provider="none",
-                    message="No LLM providers are configured. Please set at least one API key (ANTHROPIC_API_KEY, OPENAI_API_KEY, or GOOGLE_API_KEY) in your environment variables."
+                    original_error="No LLM providers are configured. Please set at least one API key (ANTHROPIC_API_KEY, OPENAI_API_KEY, or GOOGLE_API_KEY) in your environment variables."
                 )
             
             # Get LLM provider
-            llm = self.llm_providers.get(state["llm_model"])
+            llm_model = state.get("llm_model", "")
+            llm = self.llm_providers.get(llm_model)
             if not llm:
                 available_models = list(self.llm_providers.keys())
                 raise LLMProviderError(
-                    provider=state["llm_model"],
-                    message=f"LLM provider {state['llm_model']} not available. Available providers: {', '.join(available_models)}"
+                    provider=llm_model,
+                    original_error=f"LLM provider {llm_model} not available. Available providers: {', '.join(available_models)}"
                 )
             
             # Create prompt
@@ -288,7 +296,7 @@ Generate the X post now (remember: 250 characters MAX):"""
             
             # Add hashtags if not present
             if '#' not in generated_content:
-                hashtags = self._generate_hashtags(state["topic"])
+                hashtags = self._generate_hashtags(state.get("topic", "Tech"))
                 hashtag_text = ' '.join(hashtags)
                 
                 # Check if adding hashtags would exceed limit
@@ -326,8 +334,8 @@ Generate the X post now (remember: 250 characters MAX):"""
             
             # Log successful generation
             self.logger.log_processing_step(
-                session_id=state["session_id"],
-                workflow_id=state["workflow_id"],
+                session_id=session_id or "unknown",
+                workflow_id=workflow_id or "unknown",
                 step="x_post_generation_complete",
                 message=f"Successfully generated X post ({char_count} chars)",
                 extra_data={
@@ -346,13 +354,13 @@ Generate the X post now (remember: 250 characters MAX):"""
         except Exception as e:
             # Log error
             self.logger.log_error(
-                session_id=state["session_id"],
-                workflow_id=state["workflow_id"],
+                session_id=state.get("session_id", "unknown"),
+                workflow_id=state.get("workflow_id", "unknown"),
                 step="x_post_generation_error",
                 error=e,
                 extra_data={
-                    "topic": state["topic"],
-                    "article_count": len(state["articles"])
+                    "topic": state.get("topic", ""),
+                    "article_count": len(state.get("articles", []))
                 }
             )
             

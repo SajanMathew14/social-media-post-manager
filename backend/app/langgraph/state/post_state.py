@@ -1,7 +1,7 @@
 """
 Typed state definitions for LangGraph post generation workflow
 """
-from typing import TypedDict, List, Optional, Dict, Any, Annotated
+from typing import TypedDict, List, Optional, Dict, Any, Annotated, Union
 from datetime import datetime
 from enum import Enum
 from langgraph.graph import add_messages
@@ -66,6 +66,108 @@ def keep_first_value(left: str, right: str) -> str:
     return left
 
 
+def keep_first_float(left: float, right: float) -> float:
+    """
+    Custom reducer that keeps the first (original) float value.
+    Used for immutable numeric fields like start_time.
+    
+    Args:
+        left: Existing value
+        right: New value (ignored)
+        
+    Returns:
+        Original value
+    """
+    return left
+
+
+def use_latest_value(left: Any, right: Any) -> Any:
+    """
+    Custom reducer that uses the latest (most recent) value.
+    Used for fields that should be updated by the last node to run.
+    
+    Args:
+        left: Existing value
+        right: New value
+        
+    Returns:
+        New value if not None, otherwise existing value
+    """
+    return right if right is not None else left
+
+
+def use_latest_optional_str(left: Optional[str], right: Optional[str]) -> Optional[str]:
+    """
+    Custom reducer for optional string fields that uses the latest non-None value.
+    
+    Args:
+        left: Existing value
+        right: New value
+        
+    Returns:
+        New value if not None, otherwise existing value
+    """
+    return right if right is not None else left
+
+
+def use_latest_optional_float(left: Optional[float], right: Optional[float]) -> Optional[float]:
+    """
+    Custom reducer for optional float fields that uses the latest non-None value.
+    
+    Args:
+        left: Existing value
+        right: New value
+        
+    Returns:
+        New value if not None, otherwise existing value
+    """
+    return right if right is not None else left
+
+
+def use_latest_optional_content(left: Optional["GeneratedPostContent"], right: Optional["GeneratedPostContent"]) -> Optional["GeneratedPostContent"]:
+    """
+    Custom reducer for optional GeneratedPostContent that uses the latest non-None value.
+    
+    Args:
+        left: Existing value
+        right: New value
+        
+    Returns:
+        New value if not None, otherwise existing value
+    """
+    return right if right is not None else left
+
+
+def add_integers(left: int, right: int) -> int:
+    """
+    Custom reducer that adds integer values.
+    Used for counters like retry_count.
+    
+    Args:
+        left: Existing value
+        right: Value to add
+        
+    Returns:
+        Sum of both values
+    """
+    return left + right
+
+
+def combine_string_lists(left: List[str], right: List[str]) -> List[str]:
+    """
+    Custom reducer that combines string lists.
+    Used for accumulating lists like llm_providers_tried.
+    
+    Args:
+        left: Existing list
+        right: New items to add
+        
+    Returns:
+        Combined list
+    """
+    return left + right
+
+
 class NewsArticleInput(TypedDict):
     """Simplified news article for post generation"""
     title: str
@@ -90,36 +192,40 @@ class PostState(TypedDict):
     
     This state manages the generation of LinkedIn and X posts
     from news articles, following immutable update patterns.
+    
+    IMPORTANT: Every field is annotated with an appropriate reducer to handle
+    parallel processing safely. This prevents InvalidUpdateError when multiple
+    nodes update state simultaneously.
     """
     
     # Input parameters (immutable throughout workflow)
-    articles: Annotated[List[NewsArticleInput], keep_first_articles]
-    topic: Annotated[str, keep_first_value]
-    llm_model: str
-    session_id: str
-    workflow_id: str
-    news_workflow_id: str  # Link to original news workflow
+    articles: Annotated[List[NewsArticleInput], keep_first_articles]  # Original articles list
+    topic: Annotated[str, keep_first_value]  # News topic - immutable
+    llm_model: Annotated[str, keep_first_value]  # Initial LLM model - immutable
+    session_id: Annotated[str, keep_first_value]  # User session - immutable
+    workflow_id: Annotated[str, keep_first_value]  # Workflow ID - immutable
+    news_workflow_id: Annotated[str, keep_first_value]  # Link to news workflow - immutable
     
     # Processing metadata
-    start_time: float
-    current_step: str
-    processing_steps: Annotated[List[PostProcessingStep], add_processing_steps]
+    start_time: Annotated[float, keep_first_float]  # Workflow start time - immutable
+    current_step: Annotated[str, use_latest_value]  # Current processing step - updates
+    processing_steps: Annotated[List[PostProcessingStep], add_processing_steps]  # Accumulates steps
     
-    # Generated content
-    linkedin_post: Optional[GeneratedPostContent]
-    x_post: Optional[GeneratedPostContent]
+    # Generated content (each node updates its own)
+    linkedin_post: Annotated[Optional[GeneratedPostContent], use_latest_optional_content]  # LinkedIn result
+    x_post: Annotated[Optional[GeneratedPostContent], use_latest_optional_content]  # X/Twitter result
     
     # Processing results
-    processing_time: Optional[float]
+    processing_time: Annotated[Optional[float], use_latest_optional_float]  # Total time - updates
     
     # Error handling
-    error_message: Optional[str]
-    failed_step: Optional[str]
-    retry_count: int
+    error_message: Annotated[Optional[str], use_latest_optional_str]  # Latest error message
+    failed_step: Annotated[Optional[str], use_latest_optional_str]  # Which step failed
+    retry_count: Annotated[int, add_integers]  # Total retries across all nodes
     
     # LLM provider tracking
-    llm_providers_tried: List[str]
-    current_llm_provider: str
+    llm_providers_tried: Annotated[List[str], combine_string_lists]  # All providers attempted
+    current_llm_provider: Annotated[str, use_latest_value]  # Currently active provider
 
 
 def create_initial_post_state(

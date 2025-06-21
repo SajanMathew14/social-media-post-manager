@@ -1,9 +1,10 @@
 """
 Typed state definitions for LangGraph post generation workflow
 """
-from typing import TypedDict, List, Optional, Dict, Any
+from typing import TypedDict, List, Optional, Dict, Any, Annotated
 from datetime import datetime
 from enum import Enum
+from langgraph.graph import add_messages
 
 
 class PostGenerationStatus(Enum):
@@ -20,6 +21,20 @@ class PostProcessingStep(TypedDict):
     status: PostGenerationStatus
     message: Optional[str]
     timestamp: str
+
+
+def add_processing_steps(left: List[PostProcessingStep], right: List[PostProcessingStep]) -> List[PostProcessingStep]:
+    """
+    Custom reducer for processing steps that handles parallel updates.
+    
+    Args:
+        left: Existing processing steps
+        right: New processing steps to add
+        
+    Returns:
+        Combined list of processing steps
+    """
+    return left + right
 
 
 class NewsArticleInput(TypedDict):
@@ -59,7 +74,7 @@ class PostState(TypedDict):
     # Processing metadata
     start_time: float
     current_step: str
-    processing_steps: List[PostProcessingStep]
+    processing_steps: Annotated[List[PostProcessingStep], add_processing_steps]
     
     # Generated content
     linkedin_post: Optional[GeneratedPostContent]
@@ -173,8 +188,8 @@ def update_post_processing_step(
         timestamp=datetime.utcnow().isoformat()
     )
     
-    # Immutably update processing steps
-    new_state["processing_steps"] = state["processing_steps"] + [new_step]
+    # For Annotated types with reducers, we only return the new steps to be added
+    new_state["processing_steps"] = [new_step]
     
     return new_state
 

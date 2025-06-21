@@ -2,7 +2,7 @@
 Post generation workflow composition using LangGraph.
 
 This workflow generates LinkedIn and X posts from news articles
-using parallel processing for efficiency.
+using serial processing to ensure proper state propagation.
 """
 import uuid
 from typing import Dict, Any, List
@@ -20,15 +20,14 @@ class PostWorkflow:
     """
     Complete post generation workflow using LangGraph.
     
-    Workflow Steps:
-    1. START -> Generate posts in parallel:
-       - generate_linkedin_post: Generate LinkedIn post
-       - generate_x_post: Generate X (Twitter) post
-    2. Both posts -> save_posts: Save to database
-    3. save_posts -> END: Complete workflow
+    Workflow Steps (SERIAL EXECUTION):
+    1. START -> generate_linkedin_post: Generate LinkedIn post
+    2. generate_linkedin_post -> generate_x_post: Generate X (Twitter) post
+    3. generate_x_post -> save_posts: Save both posts to database
+    4. save_posts -> END: Complete workflow
     
-    This workflow implements parallel processing for efficiency,
-    proper error handling, and comprehensive state management.
+    This workflow implements serial processing to ensure proper state
+    propagation, error handling, and comprehensive state management.
     """
     
     def __init__(self):
@@ -51,14 +50,14 @@ class PostWorkflow:
         workflow.add_node("generate_x_post", XPostNode())
         workflow.add_node("save_posts", SavePostsNode())
         
-        # Define workflow edges - simple sequential approach
-        # Both posts start in parallel from START
+        # Define workflow edges - SERIAL execution to ensure state propagation
+        # Start with LinkedIn post generation
         workflow.add_edge(START, "generate_linkedin_post")
-        workflow.add_edge(START, "generate_x_post")
         
-        # Both posts go directly to save_posts
-        # The save_posts node will handle the logic to wait for both
-        workflow.add_edge("generate_linkedin_post", "save_posts")
+        # Then generate X post
+        workflow.add_edge("generate_linkedin_post", "generate_x_post")
+        
+        # Finally save both posts
         workflow.add_edge("generate_x_post", "save_posts")
         
         # Save posts to END

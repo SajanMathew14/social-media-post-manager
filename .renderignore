@@ -1,0 +1,33 @@
+# Node.js and frontend files
+node_modules/
+frontend/
+shared/
+package.json
+pnpm-lock.yaml
+pnpm-workspace.yaml
+
+# Development files
+*.log
+.env
+.env.local
+.env.development
+.env.test
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+build/
+.next/
+
+# Package manager files
+yarn.lock
+package-lock.json

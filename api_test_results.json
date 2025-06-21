@@ -1,0 +1,96 @@
+{
+  "test_date": "2025-06-14T16:49:08.706062",
+  "base_url": "https://social-media-backend-mchy.onrender.com",
+  "summary": {
+    "total": 12,
+    "successful": 0,
+    "failed": 12,
+    "success_rate": "0.0%"
+  },
+  "results": [
+    {
+      "endpoint": "/",
+      "method": "GET",
+      "description": "Test root endpoint - should return API info",
+      "success": false,
+      "error": "HTTPSConnectionPool(host='social-media-backend-mchy.onrender.com', port=443): Max retries exceeded with url: / (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1018)')))"
+    },
+    {
+      "endpoint": "/health",
+      "method": "GET",
+      "description": "Test health check - should return health status",
+      "success": false,
+      "error": "HTTPSConnectionPool(host='social-media-backend-mchy.onrender.com', port=443): Max retries exceeded with url: /health (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1018)')))"
+    },
+    {
+      "endpoint": "/docs",
+      "method": "GET",
+      "description": "Test Swagger documentation endpoint",
+      "success": false,
+      "error": "HTTPSConnectionPool(host='social-media-backend-mchy.onrender.com', port=443): Max retries exceeded with url: /docs (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1018)')))"
+    },
+    {
+      "endpoint": "/redoc",
+      "method": "GET",
+      "description": "Test ReDoc documentation endpoint",
+      "success": false,
+      "error": "HTTPSConnectionPool(host='social-media-backend-mchy.onrender.com', port=443): Max retries exceeded with url: /redoc (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1018)')))"
+    },
+    {
+      "endpoint": "/api/sessions/create",
+      "method": "POST",
+      "description": "Create a new session",
+      "success": false,
+      "error": "HTTPSConnectionPool(host='social-media-backend-mchy.onrender.com', port=443): Max retries exceeded with url: /api/sessions/create (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1018)')))"
+    },
+    {
+      "endpoint": "/api/sessions/invalid-session-id",
+      "method": "GET",
+      "description": "Test with invalid session ID (should return 404)",
+      "success": false,
+      "error": "HTTPSConnectionPool(host='social-media-backend-mchy.onrender.com', port=443): Max retries exceeded with url: /api/sessions/invalid-session-id (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1018)')))"
+    },
+    {
+      "endpoint": "/api/news/health",
+      "method": "GET",
+      "description": "News service health check",
+      "success": false,
+      "error": "HTTPSConnectionPool(host='social-media-backend-mchy.onrender.com', port=443): Max retries exceeded with url: /api/news/health (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1018)')))"
+    },
+    {
+      "endpoint": "/api/news/models",
+      "method": "GET",
+      "description": "Get available LLM models",
+      "success": false,
+      "error": "HTTPSConnectionPool(host='social-media-backend-mchy.onrender.com', port=443): Max retries exceeded with url: /api/news/models (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1018)')))"
+    },
+    {
+      "endpoint": "/api/news/topics",
+      "method": "GET",
+      "description": "Get suggested topics",
+      "success": false,
+      "error": "HTTPSConnectionPool(host='social-media-backend-mchy.onrender.com', port=443): Max retries exceeded with url: /api/news/topics (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1018)')))"
+    },
+    {
+      "endpoint": "/api/news/fetch",
+      "method": "POST",
+      "description": "News fetch with missing fields (should return 422)",
+      "success": false,
+      "error": "HTTPSConnectionPool(host='social-media-backend-mchy.onrender.com', port=443): Max retries exceeded with url: /api/news/fetch (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1018)')))"
+    },
+    {
+      "endpoint": "/api/news/fetch",
+      "method": "POST",
+      "description": "News fetch with invalid date format (should return 422)",
+      "success": false,
+      "error": "HTTPSConnectionPool(host='social-media-backend-mchy.onrender.com', port=443): Max retries exceeded with url: /api/news/fetch (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1018)')))"
+    },
+    {
+      "endpoint": "/api/news/fetch",
+      "method": "POST",
+      "description": "News fetch with topN out of range (should return 422)",
+      "success": false,
+      "error": "HTTPSConnectionPool(host='social-media-backend-mchy.onrender.com', port=443): Max retries exceeded with url: /api/news/fetch (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1018)')))"
+    }
+  ]
+}

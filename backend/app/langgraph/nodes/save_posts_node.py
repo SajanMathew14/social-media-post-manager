@@ -10,10 +10,12 @@ import uuid
 
 from app.langgraph.state.post_state import (
     PostState,
+    PostGenerationStatus,
     mark_post_step_completed,
     mark_post_step_error,
     calculate_post_processing_time
 )
+from datetime import datetime
 from app.langgraph.utils.logging_config import StructuredLogger
 from app.langgraph.utils.error_handlers import DatabaseError
 from app.core.database import AsyncSessionLocal
@@ -319,7 +321,9 @@ class SavePostsNode:
             await db.commit()
             
             # Calculate final processing time
-            final_state = calculate_post_processing_time(state)
+            processing_time = None
+            if state.get("start_time"):
+                processing_time = datetime.utcnow().timestamp() - state["start_time"]
             
             # Log successful save with comprehensive details
             self.logger.log_processing_step(
@@ -329,18 +333,26 @@ class SavePostsNode:
                 message=f"Successfully saved {len(saved_posts)} posts to database",
                 extra_data={
                     "saved_posts": saved_posts,
-                    "processing_time": final_state.get("processing_time"),
+                    "processing_time": processing_time,
                     "total_posts_saved": len(saved_posts),
                     "linkedin_saved": any(p["type"] == "linkedin" for p in saved_posts),
                     "x_saved": any(p["type"] == "x" for p in saved_posts)
                 }
             )
             
-            return mark_post_step_completed(
-                final_state,
-                "save_posts",
-                f"Successfully saved {len(saved_posts)} posts to database"
-            )
+            # Return only the fields this node updates
+            return {
+                "current_step": "save_posts",
+                "processing_time": processing_time,
+                "processing_steps": [
+                    {
+                        "step": "save_posts",
+                        "status": PostGenerationStatus.COMPLETED,
+                        "message": f"Successfully saved {len(saved_posts)} posts to database",
+                        "timestamp": datetime.utcnow().isoformat()
+                    }
+                ]
+            }
             
         except DatabaseError as e:
             # Handle database-specific errors
@@ -374,11 +386,20 @@ class SavePostsNode:
                 }
             )
             
-            return mark_post_step_error(
-                state,
-                "save_posts",
-                f"Database error during post save: {e.message}"
-            )
+            # Return error state update
+            return {
+                "error_message": f"Database error during post save: {e.message}",
+                "failed_step": "save_posts",
+                "current_step": "save_posts",
+                "processing_steps": [
+                    {
+                        "step": "save_posts",
+                        "status": PostGenerationStatus.ERROR,
+                        "message": f"Database error during post save: {e.message}",
+                        "timestamp": datetime.utcnow().isoformat()
+                    }
+                ]
+            }
             
         except Exception as e:
             # Handle unexpected errors
@@ -414,11 +435,20 @@ class SavePostsNode:
                 }
             )
             
-            return mark_post_step_error(
-                state,
-                "save_posts",
-                f"Unexpected error during post save: {str(e)} (Type: {type(e).__name__})"
-            )
+            # Return error state update
+            return {
+                "error_message": f"Unexpected error during post save: {str(e)} (Type: {type(e).__name__})",
+                "failed_step": "save_posts",
+                "current_step": "save_posts",
+                "processing_steps": [
+                    {
+                        "step": "save_posts",
+                        "status": PostGenerationStatus.ERROR,
+                        "message": f"Unexpected error during post save: {str(e)} (Type: {type(e).__name__})",
+                        "timestamp": datetime.utcnow().isoformat()
+                    }
+                ]
+            }
             
         finally:
             # Ensure database session is properly closed

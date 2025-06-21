@@ -14,10 +14,12 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from app.langgraph.state.post_state import (
     PostState,
     GeneratedPostContent,
+    PostGenerationStatus,
     mark_post_step_completed,
     mark_post_step_error,
     format_article_for_prompt
 )
+from datetime import datetime
 from app.langgraph.utils.logging_config import StructuredLogger
 from app.langgraph.utils.error_handlers import LLMProviderError
 from app.core.config import settings
@@ -212,14 +214,19 @@ Generate the LinkedIn post now:"""
                     shortened_urls=None
                 )
                 
-                new_state = state.copy()
-                new_state["linkedin_post"] = linkedin_post
-                
-                return mark_post_step_completed(
-                    new_state,
-                    "linkedin_post_generation",
-                    "Generated generic LinkedIn post (no articles available)"
-                )
+                # Return only the fields this node updates
+                return {
+                    "linkedin_post": linkedin_post,
+                    "current_step": "linkedin_post_generation",
+                    "processing_steps": [
+                        {
+                            "step": "linkedin_post_generation",
+                            "status": PostGenerationStatus.COMPLETED,
+                            "message": "Generated generic LinkedIn post (no articles available)",
+                            "timestamp": datetime.utcnow().isoformat()
+                        }
+                    ]
+                }
             
             # Check if any LLM providers are available
             if not self.llm_providers:
@@ -265,10 +272,6 @@ Generate the LinkedIn post now:"""
                 shortened_urls=None  # URLs not shortened for LinkedIn
             )
             
-            # Update state
-            new_state = state.copy()
-            new_state["linkedin_post"] = linkedin_post
-            
             # Log successful generation
             self.logger.log_processing_step(
                 session_id=session_id or "unknown",
@@ -281,11 +284,19 @@ Generate the LinkedIn post now:"""
                 }
             )
             
-            return mark_post_step_completed(
-                new_state,
-                "linkedin_post_generation",
-                f"Generated LinkedIn post with {char_count} characters"
-            )
+            # Return only the fields this node updates
+            return {
+                "linkedin_post": linkedin_post,
+                "current_step": "linkedin_post_generation",
+                "processing_steps": [
+                    {
+                        "step": "linkedin_post_generation",
+                        "status": PostGenerationStatus.COMPLETED,
+                        "message": f"Generated LinkedIn post with {char_count} characters",
+                        "timestamp": datetime.utcnow().isoformat()
+                    }
+                ]
+            }
             
         except Exception as e:
             # Log error
@@ -300,11 +311,20 @@ Generate the LinkedIn post now:"""
                 }
             )
             
-            return mark_post_step_error(
-                state,
-                "linkedin_post_generation",
-                f"Failed to generate LinkedIn post: {str(e)}"
-            )
+            # Return error state update
+            return {
+                "error_message": f"Failed to generate LinkedIn post: {str(e)}",
+                "failed_step": "linkedin_post_generation",
+                "current_step": "linkedin_post_generation",
+                "processing_steps": [
+                    {
+                        "step": "linkedin_post_generation",
+                        "status": PostGenerationStatus.ERROR,
+                        "message": f"Failed to generate LinkedIn post: {str(e)}",
+                        "timestamp": datetime.utcnow().isoformat()
+                    }
+                ]
+            }
     
     def _extract_hashtags(self, content: str) -> List[str]:
         """

@@ -15,10 +15,12 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from app.langgraph.state.post_state import (
     PostState,
     GeneratedPostContent,
+    PostGenerationStatus,
     mark_post_step_completed,
     mark_post_step_error,
     format_article_for_prompt
 )
+from datetime import datetime
 from app.langgraph.utils.logging_config import StructuredLogger
 from app.langgraph.utils.error_handlers import LLMProviderError
 from app.core.config import settings
@@ -328,10 +330,6 @@ Generate the X post now (remember: 250 characters MAX):"""
                 shortened_urls=shortened_urls if shortened_urls else None
             )
             
-            # Update state
-            new_state = state.copy()
-            new_state["x_post"] = x_post
-            
             # Log successful generation
             self.logger.log_processing_step(
                 session_id=session_id or "unknown",
@@ -345,11 +343,19 @@ Generate the X post now (remember: 250 characters MAX):"""
                 }
             )
             
-            return mark_post_step_completed(
-                new_state,
-                "x_post_generation",
-                f"Generated X post with {char_count} characters"
-            )
+            # Return only the fields this node updates
+            return {
+                "x_post": x_post,
+                "current_step": "x_post_generation",
+                "processing_steps": [
+                    {
+                        "step": "x_post_generation",
+                        "status": PostGenerationStatus.COMPLETED,
+                        "message": f"Generated X post with {char_count} characters",
+                        "timestamp": datetime.utcnow().isoformat()
+                    }
+                ]
+            }
             
         except Exception as e:
             # Log error
@@ -364,11 +370,20 @@ Generate the X post now (remember: 250 characters MAX):"""
                 }
             )
             
-            return mark_post_step_error(
-                state,
-                "x_post_generation",
-                f"Failed to generate X post: {str(e)}"
-            )
+            # Return error state update
+            return {
+                "error_message": f"Failed to generate X post: {str(e)}",
+                "failed_step": "x_post_generation",
+                "current_step": "x_post_generation",
+                "processing_steps": [
+                    {
+                        "step": "x_post_generation",
+                        "status": PostGenerationStatus.ERROR,
+                        "message": f"Failed to generate X post: {str(e)}",
+                        "timestamp": datetime.utcnow().isoformat()
+                    }
+                ]
+            }
     
     def _extract_hashtags(self, content: str) -> List[str]:
         """

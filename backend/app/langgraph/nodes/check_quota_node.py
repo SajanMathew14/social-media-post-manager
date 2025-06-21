@@ -85,7 +85,7 @@ class CheckQuotaNode:
                 await self._ensure_session_exists(db_session, state["session_id"])
                 
                 # Generate request hash for duplicate detection
-                request_hash = self._generate_request_hash(state["topic"], state["date"])
+                request_hash = self._generate_request_hash(state["topic"], state["date"], state["session_id"])
                 
                 # Check for duplicate requests
                 await self._check_duplicate_request(
@@ -233,13 +233,14 @@ class CheckQuotaNode:
         except Exception as e:
             raise DatabaseError("session_management", str(e))
     
-    def _generate_request_hash(self, topic: str, date: str) -> str:
+    def _generate_request_hash(self, topic: str, date: str, session_id: str) -> str:
         """
         Generate hash for duplicate request detection.
         
         Args:
             topic: News topic
             date: Request date
+            session_id: User session identifier
             
         Returns:
             Request hash string
@@ -248,7 +249,7 @@ class CheckQuotaNode:
         
         # Normalize inputs for consistent hashing
         normalized_topic = topic.lower().strip()
-        hash_input = f"{normalized_topic}-{date}"
+        hash_input = f"{session_id}-{normalized_topic}-{date}"
         
         return hashlib.md5(hash_input.encode()).hexdigest()
     

@@ -37,6 +37,20 @@ def add_processing_steps(left: List[PostProcessingStep], right: List[PostProcess
     return left + right
 
 
+def keep_first_articles(left: List[NewsArticleInput], right: List[NewsArticleInput]) -> List[NewsArticleInput]:
+    """
+    Custom reducer for articles that keeps the first (original) value.
+    
+    Args:
+        left: Existing articles
+        right: New articles (ignored)
+        
+    Returns:
+        Original articles list
+    """
+    return left
+
+
 class NewsArticleInput(TypedDict):
     """Simplified news article for post generation"""
     title: str
@@ -64,7 +78,7 @@ class PostState(TypedDict):
     """
     
     # Input parameters (immutable throughout workflow)
-    articles: List[NewsArticleInput]
+    articles: Annotated[List[NewsArticleInput], keep_first_articles]
     topic: str
     llm_model: str
     session_id: str

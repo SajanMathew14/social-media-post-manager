@@ -10,21 +10,28 @@ The conflict is caused by:
     langchain 0.3.26 depends on langchain-core<1.0.0 and >=0.3.66
 ```
 
-**Root Cause**: The main `langchain==0.3.26` package was included in requirements.txt but was **not actually used anywhere in the codebase**.
+**Root Cause**: Multiple dependency conflicts in the LangChain ecosystem:
+1. The main `langchain==0.3.26` package was included but not used anywhere in the codebase
+2. `langchain-core==0.3.26` was too old for the provider packages which require `>=0.3.63`
 
 ## Solution Applied
 
 ### ✅ Removed Unnecessary Package
 - **Removed**: `langchain==0.3.26` from `backend/requirements.txt`
 - **Reason**: Package not used anywhere in the codebase
-- **Impact**: Zero functionality loss, eliminates dependency conflict
+- **Impact**: Zero functionality loss, eliminates one dependency conflict
+
+### ✅ Updated Core Package Version
+- **Updated**: `langchain-core` from `0.3.26` to `0.3.66`
+- **Reason**: Provider packages require `langchain-core>=0.3.63`
+- **Impact**: Satisfies all provider package requirements
 
 ### ✅ Kept Required Packages
 All packages that are actually used in the code remain:
 
 | Package | Version | Usage Location | Purpose |
 |---------|---------|----------------|---------|
-| `langchain-core` | 0.3.26 | Multiple nodes | SystemMessage, HumanMessage, add_messages |
+| `langchain-core` | 0.3.66 | Multiple nodes | SystemMessage, HumanMessage, add_messages |
 | `langchain-anthropic` | 0.3.15 | Post generation nodes | Claude 3.5 Sonnet/Haiku models |
 | `langchain-openai` | 0.3.24 | Post generation nodes | GPT-4 Turbo models |
 | `langchain-google-genai` | 2.1.5 | Post generation nodes | Gemini Pro models |

@@ -1,0 +1,55 @@
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: social-media-db
+    env: docker
+    plan: free
+    region: oregon
+    databases:
+      - name: social_media_manager
+        user: postgres
+
+  # FastAPI Backend
+  - type: web
+    name: social-media-backend
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: cd backend && pip install -r requirements.txt
+    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: social-media-db
+          property: connectionString
+      - key: SERPER_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: ALLOWED_HOSTS
+        value: "https://your-frontend-domain.vercel.app,http://localhost:3000"
+      - key: LOG_LEVEL
+        value: "INFO"
+      - key: LOG_FORMAT
+        value: "json"
+      - key: DAILY_QUOTA_LIMIT
+        value: "10"
+      - key: MONTHLY_QUOTA_LIMIT
+        value: "300"
+      - key: DEFAULT_LLM_MODEL
+        value: "claude-3-5-sonnet"
+      - key: LLM_MAX_TOKENS
+        value: "4000"
+      - key: LLM_TEMPERATURE
+        value: "0.7"
+      - key: MAX_NEWS_ARTICLES
+        value: "12"
+      - key: DEFAULT_NEWS_ARTICLES
+        value: "5"
+      - key: NEWS_CACHE_TTL
+        value: "3600"

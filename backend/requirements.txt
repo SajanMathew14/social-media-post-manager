@@ -1,0 +1,28 @@
+fastapi==0.115.13
+uvicorn[standard]==0.34.3
+sqlalchemy==2.0.41
+psycopg2-binary==2.9.9
+asyncpg==0.30.0
+alembic==1.14.0
+pydantic==2.11.6
+pydantic-settings==2.10.0
+python-multipart==0.0.12
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+httpx==0.28.1
+aiofiles==24.1.0
+python-dotenv==1.0.1
+
+# Latest LangChain packages - December 2024 versions
+langchain==0.3.26
+langchain-anthropic==0.3.15
+langchain-openai==0.3.24
+langchain-google-genai==2.1.5
+langchain-core==0.3.26
+langgraph==0.4.8
+
+# Langfuse for LLM observability
+langfuse==2.55.0
+
+requests==2.32.4
+aiohttp==3.12.13

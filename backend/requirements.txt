@@ -14,7 +14,7 @@ aiofiles==24.1.0
 python-dotenv==1.0.1
 
 # Latest LangChain packages - December 2024 versions
-langchain==0.3.26
+# Removed langchain==0.3.26 - not used in codebase and causes dependency conflicts
 langchain-anthropic==0.3.15
 langchain-openai==0.3.24
 langchain-google-genai==2.1.5

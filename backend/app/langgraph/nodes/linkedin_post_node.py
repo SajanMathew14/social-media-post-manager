@@ -186,18 +186,18 @@ Generate the LinkedIn post now:"""
             Updated state with generated LinkedIn post
         """
         try:
-            # Validate critical state fields first
-            session_id = state.get("session_id", "")
-            workflow_id = state.get("workflow_id", "")
-            llm_model = state.get("llm_model", "")
+            # Access critical state fields directly (guaranteed to exist due to reducers)
+            session_id = state["session_id"]
+            workflow_id = state["workflow_id"]
+            llm_model = state["llm_model"]
             
-            # Validate required fields
-            if not session_id:
-                raise ValueError("session_id is missing from workflow state")
-            if not workflow_id:
-                raise ValueError("workflow_id is missing from workflow state")
-            if not llm_model:
-                raise ValueError("llm_model is missing from workflow state")
+            # Validate required fields are not empty
+            if not session_id or session_id.strip() == "":
+                raise ValueError("session_id is missing or empty in workflow state")
+            if not workflow_id or workflow_id.strip() == "":
+                raise ValueError("workflow_id is missing or empty in workflow state")
+            if not llm_model or llm_model.strip() == "":
+                raise ValueError("llm_model is missing or empty in workflow state")
             
             # Log start of LinkedIn post generation with comprehensive state info
             self.logger.log_processing_step(

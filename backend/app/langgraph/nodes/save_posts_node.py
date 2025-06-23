@@ -159,13 +159,13 @@ class SavePostsNode:
         """
         db = None
         try:
-            # Validate critical state fields first
-            session_id = state.get("session_id", "")
-            workflow_id = state.get("workflow_id", "")
+            # Access critical state fields directly (guaranteed to exist due to reducers)
+            session_id = state["session_id"]
+            workflow_id = state["workflow_id"]
             
-            # Validate required fields
-            if not session_id:
-                error_msg = "Session ID is missing from workflow state"
+            # Validate required fields are not empty
+            if not session_id or session_id.strip() == "":
+                error_msg = "Session ID is missing or empty in workflow state"
                 self.logger.log_error(
                     session_id="unknown",
                     workflow_id=workflow_id or "unknown",
@@ -174,19 +174,23 @@ class SavePostsNode:
                     extra_data={
                         "state_keys": list(state.keys()),
                         "has_linkedin_post": state.get("linkedin_post") is not None,
-                        "has_x_post": state.get("x_post") is not None
+                        "has_x_post": state.get("x_post") is not None,
+                        "session_id_value": repr(session_id)
                     }
                 )
                 raise ValueError(error_msg)
             
-            if not workflow_id:
-                error_msg = "Workflow ID is missing from workflow state"
+            if not workflow_id or workflow_id.strip() == "":
+                error_msg = "Workflow ID is missing or empty in workflow state"
                 self.logger.log_error(
                     session_id=session_id,
                     workflow_id="unknown",
                     step="save_posts_validation_failed",
                     error=error_msg,
-                    extra_data={"state_keys": list(state.keys())}
+                    extra_data={
+                        "state_keys": list(state.keys()),
+                        "workflow_id_value": repr(workflow_id)
+                    }
                 )
                 raise ValueError(error_msg)
             

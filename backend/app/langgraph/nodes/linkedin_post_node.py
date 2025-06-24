@@ -94,31 +94,33 @@ class LinkedInPostNode:
         Returns:
             Dictionary with character limits for different sections
         """
-        # Reserve characters for structure and CTA
-        structure_chars = 200  # Opening, transitions, CTA
+        # Reserve minimal characters for structure and CTA (reduced from 200 to 100)
+        structure_chars = 100  # Opening, transitions, CTA
         available_chars = self.MAX_CHAR_LIMIT - structure_chars
         
         # Calculate per-article allocation
         chars_per_article = available_chars // article_count
         
-        # Adjust for readability
+        # Adjust for readability - more generous allocation
         if article_count <= 3:
             # Fewer articles = richer content
-            headline_chars = 100
-            summary_chars = chars_per_article - headline_chars - 50  # 50 for formatting
+            headline_chars = 120
+            summary_chars = chars_per_article - headline_chars - 30  # 30 for formatting and link
         elif article_count <= 6:
             # Medium count = balanced content
-            headline_chars = 80
-            summary_chars = chars_per_article - headline_chars - 40
+            headline_chars = 100
+            summary_chars = chars_per_article - headline_chars - 25
         else:
-            # Many articles = concise content
-            headline_chars = 60
-            summary_chars = chars_per_article - headline_chars - 30
+            # Many articles = concise content but still comprehensive
+            headline_chars = 80
+            summary_chars = chars_per_article - headline_chars - 20
         
         return {
             "headline_chars": headline_chars,
             "summary_chars": summary_chars,
-            "chars_per_article": chars_per_article
+            "chars_per_article": chars_per_article,
+            "structure_chars": structure_chars,
+            "available_chars": available_chars
         }
     
     def _create_linkedin_prompt(self, state: PostState) -> str:
@@ -144,33 +146,48 @@ class LinkedInPostNode:
             for i, article in enumerate(articles)
         ])
         
-        prompt = f"""You are writing a professional LinkedIn post summarizing {article_count} key news items about {topic} for an audience of tech leaders, startup founders, and innovation-driven professionals.
+        prompt = f"""You are writing a professional LinkedIn post summarizing ALL {article_count} key news items about {topic} for an audience of tech leaders, startup founders, and innovation-driven professionals.
+
+CRITICAL REQUIREMENTS:
+- You MUST include ALL {article_count} articles in your post
+- Use the FULL {self.MAX_CHAR_LIMIT} character limit efficiently
+- Each article must have a title, summary, and embedded link
 
 CONTENT DISTRIBUTION:
-- Total character limit: {self.MAX_CHAR_LIMIT} characters
+- Total character limit: {self.MAX_CHAR_LIMIT} characters (USE MOST OF IT)
 - Per article allocation: ~{distribution['chars_per_article']} characters
-- Headline per article: ~{distribution['headline_chars']} characters
-- Summary per article: ~{distribution['summary_chars']} characters
+- Structure overhead: ~{distribution['structure_chars']} characters
 
-ARTICLES TO SUMMARIZE:
+ARTICLES TO SUMMARIZE (ALL MUST BE INCLUDED):
 {articles_text}
 
-FORMATTING REQUIREMENTS:
-1. Start with an engaging opening line that captures attention
-2. For each news item:
-   - Write a strong, attention-grabbing headline (use emoji if appropriate)
-   - Write a summary that prioritizes the most important/critical points
-   - Include the source in parentheses
-   - Add the original link at the end
-3. Use clear formatting with line breaks between items
-4. End with a thought-provoking question or call-to-action
-5. Keep the total post under {self.MAX_CHAR_LIMIT} characters
+EXACT FORMAT TO FOLLOW:
+📢 [Engaging hook about {topic} developments]
 
-TONE AND STYLE:
-- Professional yet conversational
-- Focus on insights and implications
-- Highlight innovation and trends
-- Make it shareable and discussion-worthy
+🔹 **[Article 1 Title]** - [Key insight/summary] ([Source]) [Read more](URL)
+
+🔹 **[Article 2 Title]** - [Key insight/summary] ([Source]) [Read more](URL)
+
+[Continue for ALL {article_count} articles...]
+
+💭 [Thought-provoking question or call-to-action]
+
+#relevant #hashtags
+
+FORMATTING RULES:
+1. Start with an engaging emoji and hook
+2. For EACH of the {article_count} articles:
+   - Use 🔹 bullet point
+   - Bold title in **brackets**
+   - Concise but impactful summary
+   - Source in parentheses
+   - Embed URL using contextual phrases like "Read more", "Full story", "Details here"
+3. End with engaging question/CTA
+4. Add 2-3 relevant hashtags
+5. Use line breaks for readability
+6. MAXIMIZE character usage - aim for 2800+ characters
+
+CRITICAL: You must reference ALL {article_count} articles. Do not skip any article.
 
 Generate the LinkedIn post now:"""
         

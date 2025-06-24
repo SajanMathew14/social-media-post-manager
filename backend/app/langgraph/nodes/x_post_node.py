@@ -146,6 +146,66 @@ class XPostNode:
             )
             return None
     
+    def _handle_url_gracefully(self, content: str, articles: List[Dict[str, Any]]) -> str:
+        """
+        Handle URL embedding gracefully with fallback strategies.
+        
+        Args:
+            content: Generated post content
+            articles: List of articles with URLs
+            
+        Returns:
+            Content with URLs handled gracefully
+        """
+        if not articles:
+            return content
+        
+        # Try to find the most important article (first one or highest relevance)
+        primary_article = articles[0]
+        primary_url = primary_article.get("url", "")
+        
+        if not primary_url:
+            return content
+        
+        # Contextual phrases for embedding URLs
+        embed_phrases = [
+            ("Details", "Details"),
+            ("Full story", "story"),
+            ("Read more", "more"),
+            ("Source", "Source"),
+            ("Analysis", "Analysis"),
+            ("Report", "Report"),
+            ("Data", "Data"),
+            ("Study", "Study")
+        ]
+        
+        # Try to embed URL in existing contextual words
+        for full_phrase, embed_word in embed_phrases:
+            if embed_word.lower() in content.lower():
+                # Replace the word with a markdown-style link
+                import re
+                pattern = re.compile(re.escape(embed_word), re.IGNORECASE)
+                content = pattern.sub(f"[{embed_word}]({primary_url})", content, count=1)
+                return content
+        
+        # If no contextual word found, try to add a contextual phrase
+        # Check if we have space to add " Details: URL"
+        test_addition = f" Details: {primary_url}"
+        if len(content) + len(test_addition) <= self.MAX_CHAR_LIMIT:
+            return content + test_addition
+        
+        # If no space for full URL, try shortened version or just add URL at end
+        if len(content) + len(primary_url) + 1 <= self.MAX_CHAR_LIMIT:
+            return content + f" {primary_url}"
+        
+        # Last resort: truncate content to fit URL
+        available_space = self.MAX_CHAR_LIMIT - len(primary_url) - 4  # 4 for " ..."
+        if available_space > 50:  # Only if we have reasonable space left
+            return content[:available_space] + f"... {primary_url}"
+        
+        # If all else fails, return original content without URL
+        return content
+    
     def _generate_hashtags(self, topic: str) -> List[str]:
         """
         Generate relevant hashtags based on topic.
@@ -193,40 +253,54 @@ class XPostNode:
         topic = state.get("topic", "Unknown Topic")
         article_count = len(articles)
         
-        # Get most relevant articles (top 3 by relevance score if available)
-        sorted_articles = sorted(
-            articles,
-            key=lambda x: x.get("relevance_score", 0),
-            reverse=True
-        )[:3]
-        
+        # Use ALL articles, not just top 3
         # Format articles for prompt
         articles_text = "\n\n".join([
             f"Article {i+1}:\n{format_article_for_prompt(article)}"
-            for i, article in enumerate(sorted_articles)
+            for i, article in enumerate(articles)
         ])
         
-        prompt = f"""Create a compelling Twitter/X post summarizing today's top {topic} news.
+        prompt = f"""Create a compelling Twitter/X post summarizing ALL {article_count} key {topic} news items in exactly 250 characters.
 
-ARTICLES TO SUMMARIZE:
+CRITICAL REQUIREMENTS:
+- You MUST reference insights from ALL {article_count} articles
+- EXACTLY 250 characters (including spaces, punctuation, hashtags)
+- Include at least one embedded link using contextual words
+
+ALL {article_count} ARTICLES TO SUMMARIZE:
 {articles_text}
 
+EXACT FORMAT STRATEGY:
+🚨 {topic} Update: [Key insight combining multiple articles]
+
+Key developments:
+• [Point from Article 1]
+• [Point from Article 2] 
+• [Point from Article 3+]
+
+[Embedded link] #hashtags
+
+EMBEDDING LINK STRATEGY:
+- Try to embed ONE key article link in contextual phrases:
+  * "Details here" → "Details"
+  * "Full report" → "report" 
+  * "Read analysis" → "analysis"
+  * "Source data" → "data"
+- If embedding fails, use original URL
+- NEVER fail due to URL issues
+
 REQUIREMENTS:
-1. Maximum 250 characters INCLUDING spaces and punctuation
-2. Focus on the most impactful or surprising insight
-3. Create a hook that makes people want to learn more
-4. Include 1-2 relevant hashtags at the end
-5. Optionally include ONE shortened link to the most important article
-6. Use clear, punchy language
-7. Make it shareable and engaging
+1. EXACTLY 250 characters total
+2. Reference ALL {article_count} articles through key insights
+3. Start with emoji hook
+4. Use bullet points for multiple insights
+5. Embed ONE link contextually
+6. End with 1-2 hashtags
+7. Make it viral and shareable
 
-STYLE GUIDELINES:
-- Start with a strong hook or surprising fact
-- Use numbers/statistics if impactful
-- Create urgency or highlight trends
-- End with hashtags
+CRITICAL: Must cover insights from ALL {article_count} articles, not just a subset.
 
-Generate the X post now (remember: 250 characters MAX):"""
+Generate the X post now (EXACTLY 250 characters):"""
         
         return prompt
     
@@ -328,12 +402,18 @@ Generate the X post now (remember: 250 characters MAX):"""
             
             # Shorten URLs if found
             shortened_urls = {}
-            if urls and settings.TINYURL_API_KEY:
+            if urls:
                 for url in urls[:1]:  # Only shorten first URL
-                    shortened = await self._shorten_url(url)
-                    if shortened:
-                        shortened_urls[url] = shortened
-                        generated_content = generated_content.replace(url, shortened)
+                    if settings.TINYURL_API_KEY:
+                        shortened = await self._shorten_url(url)
+                        if shortened:
+                            shortened_urls[url] = shortened
+                            generated_content = generated_content.replace(url, shortened)
+            
+            # If no URLs were embedded by LLM, try to add them gracefully
+            if not urls:
+                articles = state.get("articles", [])
+                generated_content = self._handle_url_gracefully(generated_content, articles)
             
             # Add hashtags if not present
             if '#' not in generated_content:

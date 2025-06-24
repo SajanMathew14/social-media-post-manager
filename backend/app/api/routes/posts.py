@@ -14,6 +14,7 @@ from sqlalchemy import select, and_
 import uuid
 
 from app.langgraph.workflows.post_workflow import execute_post_workflow
+from app.langgraph.workflows.stateless_post_workflow import get_stateless_post_workflow
 from app.langgraph.utils.error_handlers import (
     ValidationError,
     LLMProviderError,
@@ -72,7 +73,7 @@ async def generate_posts(
     db: AsyncSession = Depends(get_db)
 ) -> PostGenerationResponse:
     """
-    Generate LinkedIn and X posts from news articles.
+    Generate LinkedIn and X posts from news articles using the stateless workflow.
     
     This endpoint executes the post generation pipeline:
     1. Validates input articles
@@ -105,8 +106,9 @@ async def generate_posts(
                 reason="Session ID does not exist in database"
             )
         
-        # Execute post generation workflow
-        results = await execute_post_workflow(
+        # Execute stateless post generation workflow (NEW APPROACH)
+        stateless_workflow = get_stateless_post_workflow()
+        results = await stateless_workflow.execute(
             articles=request.articles,
             topic=request.topic,
             llm_model=request.llmModel,

@@ -66,6 +66,64 @@ class PostWorkflow:
         # Compile and return workflow
         return workflow.compile()
     
+    async def _execute_with_state_preservation(self, initial_state: PostState, immutable_state: Dict[str, Any]) -> PostState:
+        """
+        Execute workflow with explicit state preservation to work around LangGraph reducer issues.
+        
+        Args:
+            initial_state: The initial workflow state
+            immutable_state: Critical state fields that must be preserved
+            
+        Returns:
+            Final workflow state with preserved immutable fields
+        """
+        try:
+            # Execute the LangGraph workflow
+            result_state = await self.workflow.ainvoke(initial_state)
+            
+            # CRITICAL FIX: Explicitly restore immutable state fields
+            # This works around the LangGraph reducer issue where nodes receive empty values
+            for key, value in immutable_state.items():
+                if key not in result_state or not result_state[key] or result_state[key] == "":
+                    self.logger.log_processing_step(
+                        session_id=immutable_state["session_id"],
+                        workflow_id=immutable_state["workflow_id"],
+                        step="state_preservation_fix",
+                        message=f"Restoring missing/empty {key} field",
+                        extra_data={
+                            "field": key,
+                            "original_value": str(value),
+                            "received_value": str(result_state.get(key, "MISSING"))
+                        }
+                    )
+                    result_state[key] = value
+            
+            return result_state
+            
+        except Exception as e:
+            # If workflow execution fails, create an error state with preserved immutable fields
+            self.logger.log_error(
+                session_id=immutable_state["session_id"],
+                workflow_id=immutable_state["workflow_id"],
+                step="workflow_execution_failed",
+                error=e,
+                extra_data={
+                    "error_type": type(e).__name__,
+                    "error_message": str(e)
+                }
+            )
+            
+            # Create error state with preserved immutable fields
+            error_state = initial_state.copy()
+            error_state.update(immutable_state)  # Ensure immutable fields are preserved
+            error_state.update({
+                "error_message": f"Workflow execution failed: {str(e)}",
+                "failed_step": "workflow_execution",
+                "current_step": "workflow_execution"
+            })
+            
+            return error_state
+    
     async def execute(
         self,
         articles: List[Dict[str, Any]],
@@ -149,16 +207,29 @@ class PostWorkflow:
                 news_workflow_id=news_workflow_id
             )
             
+            # CRITICAL FIX: Store immutable state for fallback
+            # Since LangGraph reducers are not working reliably, we store the critical
+            # state fields that must be preserved throughout the workflow
+            immutable_state = {
+                "session_id": session_id,
+                "workflow_id": workflow_id,
+                "llm_model": llm_model,
+                "topic": topic,
+                "articles": initial_state["articles"],
+                "news_workflow_id": news_workflow_id,
+                "start_time": initial_state["start_time"]
+            }
+            
             # Log workflow execution start
             self.logger.log_processing_step(
                 session_id=session_id,
                 workflow_id=workflow_id,
                 step="executing_workflow",
-                message="Executing LangGraph workflow"
+                message="Executing LangGraph workflow with state preservation"
             )
             
-            # Execute workflow
-            final_state = await self.workflow.ainvoke(initial_state)
+            # Execute workflow with custom state management
+            final_state = await self._execute_with_state_preservation(initial_state, immutable_state)
             
             # Validate final state
             if not final_state:

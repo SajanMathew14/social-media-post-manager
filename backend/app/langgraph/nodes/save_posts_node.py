@@ -18,6 +18,7 @@ from app.langgraph.state.post_state import (
 from datetime import datetime
 from app.langgraph.utils.logging_config import StructuredLogger
 from app.langgraph.utils.error_handlers import DatabaseError
+from app.langgraph.utils.state_helpers import get_post_workflow_fields, StateAccessError, StateAccessHelper
 from app.core.database import AsyncSessionLocal
 from app.models.generated_post import GeneratedPost, PostType
 from app.models.session import Session
@@ -159,40 +160,23 @@ class SavePostsNode:
         """
         db = None
         try:
-            # Access critical state fields directly (guaranteed to exist due to reducers)
-            session_id = state["session_id"]
-            workflow_id = state["workflow_id"]
-            
-            # Validate required fields are not empty
-            if not session_id or session_id.strip() == "":
-                error_msg = "Session ID is missing or empty in workflow state"
+            # Use robust state access helper to handle reducer issues
+            try:
+                required_fields = get_post_workflow_fields(state)
+                session_id = required_fields["session_id"]
+                workflow_id = required_fields["workflow_id"]
+                llm_model = required_fields["llm_model"]
+            except StateAccessError as e:
+                # Log detailed state information for debugging
+                debug_info = StateAccessHelper.create_debug_state_info(state)
                 self.logger.log_error(
                     session_id="unknown",
-                    workflow_id=workflow_id or "unknown",
-                    step="save_posts_validation_failed",
-                    error=error_msg,
-                    extra_data={
-                        "state_keys": list(state.keys()),
-                        "has_linkedin_post": state.get("linkedin_post") is not None,
-                        "has_x_post": state.get("x_post") is not None,
-                        "session_id_value": repr(session_id)
-                    }
-                )
-                raise ValueError(error_msg)
-            
-            if not workflow_id or workflow_id.strip() == "":
-                error_msg = "Workflow ID is missing or empty in workflow state"
-                self.logger.log_error(
-                    session_id=session_id,
                     workflow_id="unknown",
-                    step="save_posts_validation_failed",
-                    error=error_msg,
-                    extra_data={
-                        "state_keys": list(state.keys()),
-                        "workflow_id_value": repr(workflow_id)
-                    }
+                    step="save_posts_state_access_error",
+                    error=str(e),
+                    extra_data=debug_info
                 )
-                raise ValueError(error_msg)
+                raise ValueError(str(e))
             
             # Log start of save operation with detailed context
             self.logger.log_processing_step(

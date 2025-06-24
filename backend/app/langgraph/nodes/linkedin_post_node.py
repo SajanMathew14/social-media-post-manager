@@ -22,6 +22,7 @@ from app.langgraph.state.post_state import (
 from datetime import datetime
 from app.langgraph.utils.logging_config import StructuredLogger
 from app.langgraph.utils.error_handlers import LLMProviderError
+from app.langgraph.utils.state_helpers import get_post_workflow_fields, StateAccessError, StateAccessHelper
 from app.core.config import settings
 
 
@@ -186,18 +187,23 @@ Generate the LinkedIn post now:"""
             Updated state with generated LinkedIn post
         """
         try:
-            # Access critical state fields directly (guaranteed to exist due to reducers)
-            session_id = state["session_id"]
-            workflow_id = state["workflow_id"]
-            llm_model = state["llm_model"]
-            
-            # Validate required fields are not empty
-            if not session_id or session_id.strip() == "":
-                raise ValueError("session_id is missing or empty in workflow state")
-            if not workflow_id or workflow_id.strip() == "":
-                raise ValueError("workflow_id is missing or empty in workflow state")
-            if not llm_model or llm_model.strip() == "":
-                raise ValueError("llm_model is missing or empty in workflow state")
+            # Use robust state access helper to handle reducer issues
+            try:
+                required_fields = get_post_workflow_fields(state)
+                session_id = required_fields["session_id"]
+                workflow_id = required_fields["workflow_id"]
+                llm_model = required_fields["llm_model"]
+            except StateAccessError as e:
+                # Log detailed state information for debugging
+                debug_info = StateAccessHelper.create_debug_state_info(state)
+                self.logger.log_error(
+                    session_id="unknown",
+                    workflow_id="unknown",
+                    step="linkedin_post_state_access_error",
+                    error=str(e),
+                    extra_data=debug_info
+                )
+                raise ValueError(str(e))
             
             # Log start of LinkedIn post generation with comprehensive state info
             self.logger.log_processing_step(
